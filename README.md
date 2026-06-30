@@ -85,6 +85,8 @@ grill codex on how I should wire the new webhook into the existing queue
 grill the codebase and make a plan for migrating auth to the new provider
 ```
 
+> ⏱ **Expect minutes, not seconds.** Codex reasons at high effort, so each round takes a few minutes and a full session can run 15–45 minutes. That's the cost of a genuinely code-grounded, double-checked plan — it's a deliberate planning tool, not a quick-answer chat.
+
 ## What you get
 
 Two files land in your project's `brainstorms/` folder (or an existing `brainstorm*` folder):

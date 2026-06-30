@@ -56,6 +56,13 @@ survives context limits, and a fresh, independent model attacks it before it's e
    `"$GRILL" --root "$ROOT" --slot "$SLUG" "your question"`
    The first call opens a Codex thread for that slot; later calls resume it automatically, so Codex
    keeps full memory of *this* conversation. (You set `$SLUG` in item 4 below.)
+
+   > ⏱ **Codex is slow — give every `$GRILL` call a long Bash timeout.** Codex reasons at high
+   > effort and a single substantive question routinely runs **3–8 minutes**, far past the default
+   > 2-minute Bash limit. Run *every* `$GRILL` invocation with the Bash tool's **maximum timeout
+   > (600000 ms / 10 min)**. If a call still times out, Codex was mid-investigation — just re-run
+   > the **same** question; thanks to the slot it resumes the same thread, it does not start over.
+   > Never lower the timeout to "fail fast" here; a timeout loses the round's work.
 3. **Set `$ROOT`** to the project root you're planning against (the git root, or the cwd).
 4. **Open the capture files.** Find a brainstorm folder, else create one:
    ```bash
@@ -148,6 +155,9 @@ the open branches. Never call a plan converged while the ledger has open rows. T
    ```bash
    "$GRILL" --root "$ROOT" --slot "$SLUG-adversary" --new "<attack prompt>"
    ```
+
+   (Same as every Codex call: run it with the **max Bash timeout, ~600000 ms** — see the ⏱ note in
+   Step 0. This one reads the whole plan, so it's often the slowest call of the session.)
 
    It runs in **its own session slot with `--new`**, so it has *no memory* of the grilling thread
    (an unanchored second opinion — and it can't clobber the main thread's session). Feed it the
