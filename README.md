@@ -34,11 +34,12 @@ flowchart TD
 1. You say what you want to plan. That's the only thing you're asked up front.
 2. Claude opens a persistent Codex session and asks the single most important question.
 3. Codex inspects the repo **read-only** and answers with evidence.
-4. Claude evaluates: grounded? complete? does it open a new branch? — then pushes back, drills deeper, or moves on.
-5. Anything the code can't answer is flagged `NEEDS-HUMAN:` and bounced to you.
-6. Every exchange is written to a plan file and a grill-log, and the loop continues until the plan is solid.
+4. Claude evaluates: grounded? complete? does it open a new branch? — then pushes back, drills deeper, or moves on. Open questions go into a ledger in the plan file.
+5. A decision the code can't settle (a real product/business call) is flagged `NEEDS-HUMAN:` and batched to you — the loop errs toward asking rather than guessing.
+6. Every exchange is checkpointed to a plan file and a grill-log. The loop ends when the ledger is empty; if a round budget is hit first, the plan is honestly marked **PARTIAL** and lists what's still open.
+7. **A fresh, independent Codex then attacks the finished plan** — a separate, unanchored thread, so the planner can't quietly grade its own work. Anything it finds reopens the ledger.
 
-Codex remembers the whole conversation across rounds (each turn resumes the same thread), so the dialogue compounds instead of resetting.
+Codex remembers the whole conversation across rounds (each turn resumes the same thread), so the dialogue compounds instead of resetting — except that final attacker pass, which starts clean on purpose.
 
 ## Requirements
 
@@ -88,14 +89,14 @@ grill the codebase and make a plan for migrating auth to the new provider
 
 Two files land in your project's `brainstorms/` folder (or an existing `brainstorm*` folder):
 
-- **`{date}-{topic}.plan.md`** — the converged, ordered implementation plan, grounded in real files, with a short "decided by the human" list and any residual risks.
-- **`{date}-{topic}.grill-log.md`** — the full round-by-round transcript: each question, Codex's evidence, and Claude's verdict.
+- **`{date}-{topic}.plan.md`** — the implementation plan, grounded in real files: ordered steps, an open-branches ledger, a verbatim "decided by the human" list, residual risks, and a final stamp of **CONVERGED** or **PARTIAL**.
+- **`{date}-{topic}.grill-log.md`** — the full round-by-round transcript: each question, Codex's evidence, Claude's verdict, and the final attacker pass.
 
-Transient Codex session state lives in a git-ignored `.grill-codex/` folder and can be deleted any time.
+Transient Codex session state lives in a git-ignored `.grill-codex/` folder (one thread per topic, plus a separate one for the attacker pass) and can be deleted any time.
 
 ## Safety
 
-Codex runs **read-only** every round (`-s read-only`): it reads the code and runs read-only commands, but never edits, creates, or deletes files. The only files written are the plan and log, written by Claude. This skill produces a *plan* — implementing it is a separate, deliberate next step.
+Codex runs **read-only** every round (`-s read-only`): it reads the code and runs read-only commands, but never edits, creates, or deletes files. The only files written are the plan and log, written by Claude — and any answer you give is screened for secrets/PII before it's written, never committed raw. This skill produces a *plan* — implementing it is a separate, deliberate next step.
 
 ## License
 

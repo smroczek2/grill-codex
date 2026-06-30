@@ -29,15 +29,20 @@ Usage:
 
 Options:
   --root <dir>   Project root Codex should reason about (default: current dir)
-  --new          Force a brand-new thread (forget any existing one)
-  --reset        Forget the current thread and exit (no question needed)
+  --slot <name>  Session slot — keeps independent threads side by side in one
+                 repo (default: "main"). Use a distinct slot per planning topic
+                 so a new topic never inherits an old topic's context, and a
+                 separate slot (e.g. the topic + "-adversary") for a fresh,
+                 unanchored review thread that must NOT clobber the main one.
+  --new          Force a brand-new thread for this slot (forget its existing one)
+  --reset        Forget this slot's thread and exit (no question needed)
   --quiet        Don't stream Codex's reasoning live; save it to the run log
   -h, --help     Show this help
 
 Output:
-  Codex's final answer is written to <root>/.grill-codex/last-answer.md and is
-  echoed between ===CODEX-ANSWER-START=== / ===CODEX-ANSWER-END=== markers so a
-  caller can grab just the reply.
+  Codex's final answer is written to <root>/.grill-codex/<slot>.last-answer.md
+  and echoed between ===CODEX-ANSWER-START=== / ===CODEX-ANSWER-END=== markers so
+  a caller can grab just the reply.
 EOF
 }
 
@@ -47,14 +52,17 @@ command -v codex >/dev/null 2>&1 \
 ROOT="$(pwd)"
 FORCE_NEW=0
 QUIET=0
+RESET=0
+SLOT="main"
 PROMPT=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --root)   ROOT="${2:?--root needs a path}"; shift 2 ;;
+    --slot)   SLOT="${2:?--slot needs a name}"; shift 2 ;;
     --new)    FORCE_NEW=1; shift ;;
     --quiet)  QUIET=1; shift ;;
-    --reset)  rm -f "${ROOT%/}/.grill-codex/session-id"; echo "[ask-codex] thread reset for ${ROOT%/}"; exit 0 ;;
+    --reset)  RESET=1; shift ;;
     -h|--help) usage; exit 0 ;;
     --)       shift; PROMPT="${1:-}"; break ;;
     -*)       die "unknown option: $1 (use --help)" ;;
@@ -62,21 +70,37 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$PROMPT" ]] || { usage; die "no question given."; }
 ROOT="${ROOT%/}"
 [[ -d "$ROOT" ]] || die "root directory does not exist: $ROOT"
+# sanitize the slot to a safe filename component (so topic slugs are usable verbatim)
+SLOT="$(printf '%s' "$SLOT" | tr -c 'A-Za-z0-9._-' '-')"
+[[ -n "$SLOT" ]] || SLOT="main"
 
+# Per-slot state: independent threads can coexist in one repo. This is what stops
+# (a) a new topic inheriting an old topic's thread, and (b) a fresh adversarial
+# review (its own slot) from overwriting the primary grilling thread's session id.
 STATE="$ROOT/.grill-codex"
 mkdir -p "$STATE"
-ANSWER="$STATE/last-answer.md"
-SIDFILE="$STATE/session-id"
-RUNLOG="$STATE/last-run.log"
+SIDFILE="$STATE/${SLOT}.session"
+ANSWER="$STATE/${SLOT}.last-answer.md"
+RUNLOG="$STATE/${SLOT}.last-run.log"
 
-run_codex() {  # honors --quiet: stream live (tee) or save-only
+if [[ $RESET -eq 1 ]]; then
+  rm -f "$SIDFILE"
+  echo "[ask-codex] session reset for slot '$SLOT' in $ROOT"
+  exit 0
+fi
+
+[[ -n "$PROMPT" ]] || { usage; die "no question given."; }
+
+run_codex() {  # honors --quiet: stream live (tee) or save-only.
+  # stdin is redirected from /dev/null so codex gets immediate EOF and never
+  # blocks "Reading additional input from stdin..." when launched with an open
+  # (but empty) stdin pipe — e.g. from an automation/agent harness.
   if [[ $QUIET -eq 1 ]]; then
-    codex "$@" >"$RUNLOG" 2>&1
+    codex "$@" </dev/null >"$RUNLOG" 2>&1
   else
-    codex "$@" 2>&1 | tee "$RUNLOG"
+    codex "$@" </dev/null 2>&1 | tee "$RUNLOG"
   fi
 }
 
