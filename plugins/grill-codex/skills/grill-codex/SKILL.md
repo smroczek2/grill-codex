@@ -36,13 +36,16 @@ limits.
 1. **Confirm Codex is available.** Run `command -v codex`. If missing, stop and tell the user:
    "This skill needs the OpenAI Codex CLI. Install it (`npm i -g @openai/codex`) and run
    `codex login`, then try again." Do not fake the loop without it.
-2. **Locate the helper script** that drives Codex. It ships next to this skill. Find it once:
+2. **Locate the helper script** that drives Codex. It ships next to this skill. Find it once
+   (this is bash- and zsh-safe — don't use bare `*` globs in a list, zsh aborts on no-match):
    ```bash
-   GRILL=$(ls "${CLAUDE_PLUGIN_ROOT}/skills/grill-codex/ask-codex.sh" \
-              ~/.claude/skills/grill-codex/ask-codex.sh \
-              ~/.claude/plugins/*/grill-codex/skills/grill-codex/ask-codex.sh \
-              ~/.claude/plugins/marketplaces/*/plugins/grill-codex/skills/grill-codex/ask-codex.sh \
-              2>/dev/null | head -1)
+   GRILL=""
+   for c in "${CLAUDE_PLUGIN_ROOT}/skills/grill-codex/ask-codex.sh" \
+            "$HOME/.claude/skills/grill-codex/ask-codex.sh"; do
+     [ -f "$c" ] && GRILL="$c" && break
+   done
+   [ -z "$GRILL" ] && GRILL="$(find "$HOME/.claude/plugins" -path '*grill-codex/skills/grill-codex/ask-codex.sh' 2>/dev/null | head -1)"
+   echo "using helper: $GRILL"
    ```
    Remember `$GRILL`. Every question to Codex goes through it:
    `"$GRILL" --root "$ROOT" "your question"`. The first call opens a Codex thread; later calls
