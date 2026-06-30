@@ -1,0 +1,20 @@
+{
+  "name": "grill-codex",
+  "description": "Two-model planning: Claude grills the OpenAI Codex CLI about your codebase until they lock a solid, code-grounded implementation plan.",
+  "owner": {
+    "name": "Spencer Mroczek",
+    "email": "spencer@campminder.com"
+  },
+  "plugins": [
+    {
+      "name": "grill-codex",
+      "description": "Claude relentlessly interrogates the OpenAI Codex CLI about your codebase — one question at a time — until the two models converge on a solid, code-grounded implementation plan. Codex answers read-only with file:line evidence; the human is only asked for decisions the code can't settle.",
+      "author": {
+        "name": "Spencer Mroczek",
+        "email": "spencer@campminder.com"
+      },
+      "category": "productivity",
+      "source": "./plugins/grill-codex"
+    }
+  ]
+}

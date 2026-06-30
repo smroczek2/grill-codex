@@ -1,0 +1,3 @@
+.DS_Store
+# Transient Codex session state, created inside *target* projects (not this repo)
+.grill-codex/
